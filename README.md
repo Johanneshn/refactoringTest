@@ -11,3 +11,6 @@ Try to keep this exercise below 3 hours. If you still have things you can improv
 The Program.cs class in the LegacyApp.Consumer shall NOT CHANGE AT ALL. This includes using statements. Assume that this codebase is part of a greater system, and any non-backward compatible change will break the system.
 
 You can change anything in the LegacyApp project except for the UserDataAccess class and its AddUser method. Both the class and the method NEED to stay static.
+
+## Solution
+The solution is implemented on the refactoring branch https://github.com/Johanneshn/refactoringTest/tree/refactoring
