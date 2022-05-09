@@ -20,7 +20,7 @@ namespace LegacyApp.CreditProviders
             var clients = new List<ICreditLimitProvider>()
             { 
                 new VeryImportantClientCreditLimitProvider(userCreditService),
-                new ImportanClientCreditLimitProvider(userCreditService),
+                new ImportantClientCreditLimitProvider(userCreditService),
                 new UnspecializedClientCreditLimit(userCreditService)
             };
 

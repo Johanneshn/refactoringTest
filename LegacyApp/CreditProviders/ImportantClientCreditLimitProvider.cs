@@ -4,11 +4,11 @@ using System;
 
 namespace LegacyApp.CreditProviders
 {
-    internal class ImportanClientCreditLimitProvider : ICreditLimitProvider
+    internal class ImportantClientCreditLimitProvider : ICreditLimitProvider
     {
         private readonly IUserCreditService _userCreditService;
 
-        public ImportanClientCreditLimitProvider(IUserCreditService userCreditService)
+        public ImportantClientCreditLimitProvider(IUserCreditService userCreditService)
         {
             this._userCreditService = userCreditService;
         }
