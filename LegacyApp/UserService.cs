@@ -1,7 +1,9 @@
-﻿using LegacyApp.DataAccess;
+﻿using LegacyApp.CreditProviders;
+using LegacyApp.DataAccess;
 using LegacyApp.Models;
 using LegacyApp.Repositories;
 using LegacyApp.Services;
+using LegacyApp.Validators;
 using System;
 
 namespace LegacyApp
@@ -11,49 +13,42 @@ namespace LegacyApp
 
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IClientRepository _clientRepository;
-        private readonly IUserCreditService _userCreditService;
         private readonly IUserDataAccess _userDataAccess;
+        private readonly ICreditLimitFactory _creditLimitFactory;
 
-        public UserService(): this(new DateTimeProvider(), new ClientRepository(), new UserCreditServiceClient(), new UserDataAccessProxy()) { }
+        public UserService(): this(new DateTimeProvider(), new ClientRepository(), new CreditLimitProviderFactory(new UserCreditServiceClient()), new UserDataAccessProxy()) { }
 
         public UserService(
             IDateTimeProvider dateTimeProvider, 
             IClientRepository clientRepository,
-            IUserCreditService userCreditService, 
+            ICreditLimitFactory creditLimitFactory,
             IUserDataAccess userDataAccess)
         {
             _dateTimeProvider = dateTimeProvider;
             _clientRepository = clientRepository;
-            _userCreditService = userCreditService;
+            _creditLimitFactory = creditLimitFactory;
             _userDataAccess = userDataAccess;
         }
 
+   
         public bool AddUser(string firname, string surname, string email, DateTime dateOfBirth, int clientId)
         {
-            if (string.IsNullOrEmpty(firname) || string.IsNullOrEmpty(surname))
+            if (UserValidators.HasValidFullName(firname, surname) == false)
             {
                 return false;
             }
 
-            if (email.Contains("@") && !email.Contains("."))
+            if (UserValidators.HasValidEmail(email) == false)
             {
                 return false;
             }
 
-            var now = _dateTimeProvider.DateTime;
-            int age = now.Year - dateOfBirth.Year;
-
-            if (now.Month < dateOfBirth.Month || (now.Month == dateOfBirth.Month && now.Day < dateOfBirth.Day))
-            {
-                age--;
-            }
-
-            if (age < 21)
+            if (UserValidators.IsAtLeast21YearsOld(dateOfBirth, _dateTimeProvider.DateTimeNow) == false)
             {
                 return false;
             }
 
-            
+
             var client = _clientRepository.GetById(clientId);
 
             var user = new User
@@ -65,28 +60,14 @@ namespace LegacyApp
                 Surname = surname
             };
 
-            if (client.Name == "VeryImportantClient")
-            {
-                // Skip credit chek
-                user.HasCreditLimit = false;
-            }
-            else if (client.Name == "ImportantClient")
-            {
-                // Do credit check and double credit limit
-                user.HasCreditLimit = true;
-                var creditLimit = _userCreditService.GetCreditLimit(user.Firstname, user.Surname, user.DateOfBirth);
-                creditLimit = creditLimit * 2;
-                user.CreditLimit = creditLimit;
-            }
-            else
-            {
-                // Do credit check
-                user.HasCreditLimit = true;
-                var creditLimit = _userCreditService.GetCreditLimit(user.Firstname, user.Surname, user.DateOfBirth);
-                user.CreditLimit = creditLimit;
-            }
+            var provider = _creditLimitFactory.GetCreditLimitProviderByClientName(client.Name);
+            var creditLimit = provider.GetCreditLimits(user);
 
-            if (user.HasCreditLimit && user.CreditLimit < 500)
+            user.HasCreditLimit = creditLimit.HasCreditLimit;
+            user.CreditLimit = creditLimit.CreditLimit;
+
+    
+            if (UserValidators.UserHasCreditLimitAndItsLessThan500(user))
             {
                 return false;
             }
@@ -95,5 +76,8 @@ namespace LegacyApp
 
             return true;
         }
+
+
+       
     }
 }

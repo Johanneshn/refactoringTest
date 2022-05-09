@@ -8,6 +8,6 @@ namespace LegacyApp.Services
 {
     public interface IDateTimeProvider
     {
-        public DateTime DateTime { get; }
+        public DateTime DateTimeNow { get; }
     }
 }
